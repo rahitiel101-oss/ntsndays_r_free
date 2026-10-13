@@ -122,6 +122,8 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;touch-action:ma
   z-index:30;
 }
 #title-screen.hide{display:none;}
+/* After Story has no separate title page. */
+#title-screen{display:none!important;}
 #app-version{
   position:absolute;right:2.2vw;bottom:1.6vh;
   font-family:'Noto Serif JP',serif;font-size:clamp(.6rem,1.1vw,.72rem);
@@ -1673,13 +1675,8 @@ function handleTap(){
     stopAuto();
     finCard.classList.remove("active");
     finCard.style.display="none";
-    document.getElementById("title-screen").classList.remove("hide");
-    document.getElementById("chapter-screen").classList.remove("show");
-    document.getElementById("notes-screen").classList.remove("show");
-    curScene="";
-    setBg("night_sea");
-    db.style.display="none";
-    cc.style.display="none";
+    // Standalone fallback: restart the After Story instead of opening a duplicate title.
+    startChapter("after");
     return;
   }
   // The first blackout line is a normal tap-to-advance dialogue window.
@@ -2344,18 +2341,16 @@ vn.addEventListener("click",function(e){tapX=e.clientX;tapY=e.clientY;handleTap(
 window.addEventListener("resize",resize);
 window.addEventListener("pageshow",function(e){resize();});
 resize();
-// Embedded After Story starts immediately, bypassing the standalone title and disclaimer.
-if(window.parent!==window){
-  setTimeout(function(){startChapter("after");},0);
-}
-// タイトル画面を表示（show(0)は「はじめから」ボタンから呼ばれる）
-document.getElementById("title-screen").classList.remove("hide");
+// After Story begins directly at its first blackout scene.
+// Keep the legacy title element in the DOM for compatibility, but never display it.
+document.getElementById("title-screen").classList.add("hide");
 document.getElementById("chapter-screen").classList.remove("show");
 document.getElementById("notes-screen").classList.remove("show");
 curScene="";
 setBg("night_sea");
 db.style.display="none";
 cc.style.display="none";
+startChapter("after");
 
 </script>
 </body>
