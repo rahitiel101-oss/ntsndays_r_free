@@ -581,6 +581,13 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;touch-action:ma
 #glass-box-fx:after{content:"";position:absolute;inset:0;border-top:2px solid rgba(225,250,255,.24);border-left:2px solid rgba(225,250,255,.22);border-right:2px solid rgba(225,250,255,.20);background:linear-gradient(90deg,rgba(225,250,255,.12) 0 1px,transparent 1px calc(100% - 1px),rgba(225,250,255,.10) calc(100% - 1px));opacity:.72;}
 #glass-glint{position:absolute;left:-18%;top:-28%;width:48%;height:150%;transform:rotate(18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),rgba(220,247,255,.18),rgba(255,255,255,.04),transparent);filter:blur(1px);}
 
+/* iPhone Safari landscape: keep the glass enclosure above the sprites' heads.
+   The sprites are drawn on canvas with a 3vh minimum top margin, whereas
+   the enclosure previously began at 7vh. Match all three box effects. */
+@media (orientation: landscape) and (max-height: 540px) {
+  #glass-box-fx, #white-box-trial, #ice-trial { top: 0 !important; }
+}
+
 /* After Story ending: black card with title-style gold Fin */
 #after-fin-card{position:absolute;inset:0;z-index:99999;background:#050505;display:none;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity 1s ease;}
 #after-fin-card.active{display:flex;opacity:1;}

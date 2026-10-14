@@ -2216,11 +2216,15 @@ cc.style.display="none";
   }
   document.getElementById('after-choice-top').addEventListener('click',function(e){e.stopPropagation();finishToTop();});
   document.getElementById('after-choice-start').addEventListener('click',function(e){e.stopPropagation();startAfter();});
-  document.getElementById('btn-ch-after-story').addEventListener('click',function(e){
+  function openAfterFromChapter(e){
+    if(e.preventDefault)e.preventDefault();
     e.stopPropagation();
     document.getElementById('chapter-screen').classList.remove('show');
     startAfter();
-  });
+  }
+  var afterChapterBtn=document.getElementById('btn-ch-after-story');
+  afterChapterBtn.addEventListener('touchend',openAfterFromChapter,{passive:false});
+  afterChapterBtn.addEventListener('click',openAfterFromChapter);
   window.addEventListener('message',function(e){
     if(e.origin!==location.origin || e.source!==document.getElementById('after-story-frame').contentWindow)return;
     if(e.data==='ntsn-after-story-finished')closeAfter();
