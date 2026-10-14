@@ -581,12 +581,8 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;touch-action:ma
 #glass-box-fx:after{content:"";position:absolute;inset:0;border-top:2px solid rgba(225,250,255,.24);border-left:2px solid rgba(225,250,255,.22);border-right:2px solid rgba(225,250,255,.20);background:linear-gradient(90deg,rgba(225,250,255,.12) 0 1px,transparent 1px calc(100% - 1px),rgba(225,250,255,.10) calc(100% - 1px));opacity:.72;}
 #glass-glint{position:absolute;left:-18%;top:-28%;width:48%;height:150%;transform:rotate(18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),rgba(220,247,255,.18),rgba(255,255,255,.04),transparent);filter:blur(1px);}
 
-/* iPhone Safari landscape: keep the glass enclosure above the sprites' heads.
-   The sprites are drawn on canvas with a 3vh minimum top margin, whereas
-   the enclosure previously began at 7vh. Match all three box effects. */
-@media (orientation: landscape) and (max-height: 540px) {
-  #glass-box-fx, #white-box-trial, #ice-trial { top: 0 !important; }
-}
+/* The glass ceiling stays visible on narrow landscape screens.
+   Sprite fitting is calculated against the real box position in drawCharImg. */
 
 /* After Story ending: black card with title-style gold Fin */
 #after-fin-card{position:absolute;inset:0;z-index:99999;background:#050505;display:none;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity 1s ease;}
@@ -1104,6 +1100,18 @@ function drawCharImg(imgUrl, dialogTop, titleBottom, w, h, active, cx){
   var drawW=drawH*imgAspect;
   // 幅が画面の60%超えたらクランプ
   if(drawW>w*0.60){drawW=w*0.60;drawH=drawW/imgAspect;}
+  // After Story: when inside the glass enclosure, fit each sprite beneath
+  // the actual ceiling. Use the same height-based scale for both characters;
+  // normal scenes retain the original sprite size and placement.
+  var glassEl=document.getElementById("glass-box-fx");
+  if(glassEl && glassEl.classList.contains("on") && !glassEl.classList.contains("behind-characters")){
+    var ceiling=glassEl.getBoundingClientRect().top-vn.getBoundingClientRect().top;
+    var headClearance=Math.max(6,h*0.012);
+    // Original placement: drawY = dialogTop - 0.56*drawH - 0.02*h.
+    // Solve this equation for the largest height fitting below the ceiling.
+    var fitH=(dialogTop-h*0.02-ceiling-headClearance)/0.56;
+    if(fitH>0 && fitH<drawH){drawH=fitH;drawW=drawH*imgAspect;}
+  }
   var drawX=cx-drawW/2;
   // 下端をdialogTopより44%沈める（腰〜太ももがウィンドウに隠れる）
   var sink=drawH*0.44;
