@@ -1011,6 +1011,7 @@ function drawChars(i){
   if((!s.chars||!s.chars.length) && !keepPairForOffscreenSpeaker)return;
   var dialogTop=getDialogTop(),titleBottom=getSceneTitleBottom();
   var shownIds={};
+  var glassSpriteRects=[];
   for(var j=0;j<(s.chars||[]).length;j++){
     var id=s.chars[j];
     var speakers=s.speaker?s.speaker.split("・"):[];
@@ -1036,17 +1037,49 @@ function drawChars(i){
       drawSil(w/2,dialogTop,titleBottom,w,h,active);
       continue;
     }
+    if(rect && (id==="natsuki" || id==="shin")) glassSpriteRects.push(rect);
     if(s.electricChar===id && rect){
       showElectric(rect.x, rect.y, rect.w, rect.h);
     }
   }
   // 話者ではない方も、直前まで表示していた立ち絵をグレーアウトして表示する
   if(!shownIds.natsuki && _lastNatsukiImg && !_ghostHiddenNatsuki){
-    drawCharImg(_lastNatsukiImg, dialogTop, titleBottom, w, h, false, w*0.32, false, "natsuki", true, _lastNatsukiTranslucent?0.48:undefined);
+    var ghostNRect=drawCharImg(_lastNatsukiImg, dialogTop, titleBottom, w, h, false, w*0.32, false, "natsuki", true, _lastNatsukiTranslucent?0.48:undefined);
+    if(ghostNRect) glassSpriteRects.push(ghostNRect);
   }
   if(!shownIds.shin && _lastShinImg && !_ghostHiddenShin){
     hideMoya();
-    drawCharImg(_lastShinImg, dialogTop, titleBottom, w, h, false, w*(_afterCloseLayout?0.50:0.68), false, "shin", true);
+    var ghostSRect=drawCharImg(_lastShinImg, dialogTop, titleBottom, w, h, false, w*(_afterCloseLayout?0.50:0.68), false, "shin", true);
+    if(ghostSRect) glassSpriteRects.push(ghostSRect);
+  }
+  // Fit the side walls around the *rendered* pair, rather than using a fixed
+  // viewport percentage. Only tighten an excessively roomy enclosure; leave
+  // Android-like layouts, the ceiling, and the white/ice box untouched.
+  var glassFitEl=document.getElementById("glass-box-fx");
+  if(glassFitEl && glassFitEl.classList.contains("on") &&
+     glassFitEl.classList.contains("compact") &&
+     !glassFitEl.classList.contains("behind-characters") &&
+     glassSpriteRects.length>=2 &&
+     !document.getElementById("ice-trial").classList.contains("on") &&
+     !document.getElementById("white-box-trial").classList.contains("on")){
+    var pairLeft=Math.min.apply(null,glassSpriteRects.map(function(r){return r.x;}));
+    var pairRight=Math.max.apply(null,glassSpriteRects.map(function(r){return r.x+r.w;}));
+    var currentBoxLeft=w*0.175, currentBoxRight=w*0.66;
+    var desiredPad=Math.max(8,w*0.025);
+    var desiredLeft=Math.max(0,pairLeft-desiredPad);
+    var desiredRight=Math.min(w,pairRight+desiredPad);
+    // Avoid changing already-tight Android compositions.
+    if((currentBoxRight-currentBoxLeft)>(desiredRight-desiredLeft)*1.38 &&
+       desiredLeft<desiredRight){
+      glassFitEl.style.left=(desiredLeft/w*100).toFixed(3)+"%";
+      glassFitEl.style.right=((w-desiredRight)/w*100).toFixed(3)+"%";
+    }else{
+      glassFitEl.style.left="";
+      glassFitEl.style.right="";
+    }
+  }else if(glassFitEl){
+    glassFitEl.style.left="";
+    glassFitEl.style.right="";
   }
 }
 
@@ -1762,7 +1795,7 @@ function go(i){
 
   // アフターストーリー：透明ボックス内の視覚演出（ON後は継続）
   if(s.glassStart){ document.getElementById("glass-box-fx").classList.remove("behind-characters"); document.getElementById("glass-box-fx").classList.add("on"); }
-  if(s.glassEnd){ document.getElementById("glass-box-fx").classList.remove("on"); }
+  if(s.glassEnd){ var glassEnding=document.getElementById("glass-box-fx"); glassEnding.classList.remove("on"); glassEnding.style.left=""; glassEnding.style.right=""; }
   if(s.freezeStart){ document.getElementById("ice-trial").classList.add("on"); }
   if(s.freezeEnd){ document.getElementById("ice-trial").classList.remove("on"); }
   if(s.whiteBoxStart){ document.getElementById("white-box-trial").classList.add("on"); }
