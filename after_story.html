@@ -17,6 +17,13 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;touch-action:ma
 
 /* 通常ダイアログ */
 #db{position:absolute;bottom:0;left:0;right:0;height:max(38vh, 18vw);padding:0 2vw 1.5vh;display:flex;flex-direction:column;z-index:4;}
+/* iPhone landscape: width-based minimum made dialogue cover nearly half the screen.
+   Reserve space for three lines without stealing the characters' headroom. */
+@supports (-webkit-touch-callout: none) {
+  @media (orientation: landscape) {
+    #db{height:max(38vh, 14.8vw);}
+  }
+}
 #nt{font-family:'Noto Sans JP',sans-serif;font-weight:400;font-size:2.2vw;padding:.135vh 1.7vw;letter-spacing:.1em;border-radius:5px 5px 0 0;border:3px solid #c8a830;border-bottom:none;align-self:flex-start;margin-left:1vw;z-index:2;position:relative;white-space:nowrap;display:inline-block;}
 #nt.h{display:none;}
 #di{position:absolute;bottom:1.5vh;left:2vw;right:2vw;top:0;background:rgba(14,10,24,0.95);border:3px solid #c8a830;border-radius:0 8px 8px 8px;padding:1.5vh 2vw 2.5vh;z-index:2;overflow-y:auto;}
@@ -1052,11 +1059,13 @@ function drawChars(i){
     var ghostSRect=drawCharImg(_lastShinImg, dialogTop, titleBottom, w, h, false, w*(_afterCloseLayout?0.50:0.68), false, "shin", true);
     if(ghostSRect) glassSpriteRects.push(ghostSRect);
   }
-  // Fit the side walls around the *rendered* pair, rather than using a fixed
-  // viewport percentage. Only tighten an excessively roomy enclosure; leave
-  // Android-like layouts, the ceiling, and the white/ice box untouched.
+  // iPhone landscape only: keep the enclosure close to both characters.
+  // Android and desktop retain their original glass geometry.
   var glassFitEl=document.getElementById("glass-box-fx");
-  if(glassFitEl && glassFitEl.classList.contains("on") &&
+  var isIOSDevice=/iPhone|iPad|iPod/.test(navigator.userAgent) ||
+      (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+  if(glassFitEl && isIOSDevice && w>h &&
+     glassFitEl.classList.contains("on") &&
      glassFitEl.classList.contains("compact") &&
      !glassFitEl.classList.contains("behind-characters") &&
      glassSpriteRects.length>=2 &&
@@ -1064,19 +1073,14 @@ function drawChars(i){
      !document.getElementById("white-box-trial").classList.contains("on")){
     var pairLeft=Math.min.apply(null,glassSpriteRects.map(function(r){return r.x;}));
     var pairRight=Math.max.apply(null,glassSpriteRects.map(function(r){return r.x+r.w;}));
-    var currentBoxLeft=w*0.175, currentBoxRight=w*0.66;
-    var desiredPad=Math.max(8,w*0.025);
-    var desiredLeft=Math.max(0,pairLeft-desiredPad);
-    var desiredRight=Math.min(w,pairRight+desiredPad);
-    // Avoid changing already-tight Android compositions.
-    if((currentBoxRight-currentBoxLeft)>(desiredRight-desiredLeft)*1.38 &&
-       desiredLeft<desiredRight){
-      glassFitEl.style.left=(desiredLeft/w*100).toFixed(3)+"%";
-      glassFitEl.style.right=((w-desiredRight)/w*100).toFixed(3)+"%";
-    }else{
-      glassFitEl.style.left="";
-      glassFitEl.style.right="";
-    }
+    var pad=Math.max(8,w*0.012);
+    // A sprite image can contain transparent margins. Keep the walls near
+    // the visible pair, without making the box wider than the compact layout.
+    var left=Math.max(w*0.225,pairLeft-pad);
+    var right=Math.min(w*0.625,pairRight+pad);
+    if(right-left<w*0.22){left=w*0.23;right=w*0.60;}
+    glassFitEl.style.left=(left/w*100).toFixed(3)+"%";
+    glassFitEl.style.right=((w-right)/w*100).toFixed(3)+"%";
   }else if(glassFitEl){
     glassFitEl.style.left="";
     glassFitEl.style.right="";
